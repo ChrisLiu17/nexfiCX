@@ -65,7 +65,7 @@ void MainWindow::on_comboBox_currentIndexChanged(int index)
 
 void MainWindow::openCommon()
 {
-    writeData("AT+CFUN=0");
+    writeData("AT+CFUN=0");//Modem 关闭
     ui->ipSetBtn->setEnabled(false);
     ui->tabWidget->setTabEnabled(NETWORK_TAB, true);
     ui->tabWidget->setTabEnabled(WIRELESS_TAB, true);
@@ -76,9 +76,10 @@ void MainWindow::openCommon()
 
 void MainWindow::closeCommon()
 {
-    writeData("AT+CFUN=1");
+    writeData("AT+CFUN=1");//Modem 打开
     ui->tabWidget->setTabEnabled(NETWORK_TAB, false);
     ui->tabWidget->setTabEnabled(WIRELESS_TAB, false);
+    ui->tabWidget->setTabEnabled(ADV_TAB, false);
     ui->refreshAction->setEnabled(false);
     delete m_nextBitArray;
 }
@@ -176,8 +177,11 @@ void MainWindow::serialRead()
 
 void MainWindow::readData(QByteArray data)
 {
-    qInfo() << data;
+    // I don't care the line with just \r\n
+    if (data.length() <= 2) return;
+
     m_console->putData(data);
+
     if (data.contains("DUIP")) {
         m_netIP = data.split('"')[1];//192.168.10.50
         ui->ipLineEdit->setText(m_netIP);
@@ -243,14 +247,14 @@ void MainWindow::readData(QByteArray data)
 void MainWindow::writeData(QByteArray data)
 {
     if (m_isNet) {
-        //"\r\n^DUIP: 0,\"192.168.11.11\",8CFF5F00,\"00:01:00:5f:ff:8c\",9250353\r\n\r\nOK\r\n"
         QNetworkRequest request;
 //        request.setTransferTimeout(1000);//This function was introduced in Qt 5.15.
         request.setUrl(QUrl(tr("http://%1/boafrm/formAtcmdProcess").arg(m_netIP)));
-        m_net->post(request, "FormAtcmd_Param_Atcmd="+data);
+        m_net->post(request, "FormAtcmd_Param_Atcmd=" + data);
     } else {
-        m_serial->write(data.append('\r'));
+        m_serial->write(data + '\r');
     }
+    m_console->putData(data.append('\n'));
 }
 
 void MainWindow::nextRequest()
@@ -287,7 +291,8 @@ void MainWindow::nextRequest()
 
 void MainWindow::on_ipSetBtn_clicked()
 {
-    auto cmd = ui->ipLineEdit_2->text();
+    auto cmd = tr("at^netifcfg=2,\"%1\"").arg(ui->ipLineEdit_2->text());
+    qInfo() << "set ip:" << cmd;
     writeData(cmd.toLocal8Bit());
 }
 

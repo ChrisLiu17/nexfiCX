@@ -55,6 +55,8 @@
 
 #include <QtCore/QDebug>
 
+#include <QTime>
+
 Console::Console(QWidget *parent)
     : QPlainTextEdit(parent)
     , localEchoEnabled(false)
@@ -69,7 +71,8 @@ Console::Console(QWidget *parent)
 
 void Console::putData(const QByteArray &data)
 {
-    insertPlainText(QString(data));
+    auto line = tr("%1: %2").arg(QTime::currentTime().toString()).arg(QString(data));
+    insertPlainText(line);
 
     QScrollBar *bar = verticalScrollBar();
     bar->setValue(bar->maximum());
