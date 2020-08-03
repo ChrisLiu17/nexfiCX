@@ -89,13 +89,13 @@ void MainWindow::on_openButton_clicked()
     auto portName = ui->serialPortComboBox->currentText();
 
     if (m_serial->isOpen()) {
+        m_serial->close();
         ui->openButton->setText(tr("打开串口"));
         ui->statusbar->showMessage(tr("%1 已关闭").arg(portName));
         ui->openNetBtn->setEnabled(true);
 
         disconnect(m_serial, &QSerialPort::readyRead, this, &MainWindow::serialRead);
         closeCommon();
-        m_serial->close();
         return;
     }
 
